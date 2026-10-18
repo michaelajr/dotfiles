@@ -1,0 +1,6 @@
+# Generated files and editor artifacts
+.DS_Store
+*.zwc
+*.zwc.old
+*.swp
+*~

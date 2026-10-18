@@ -1,0 +1,14 @@
+# Authenticate GitHub CLI and configure Git to share its credentials.
+emulate -L zsh
+
+if (( $# )); then
+  print -u2 -r -- 'Usage: github-auth'
+  return 2
+fi
+if (( ! $+commands[gh] )); then
+  print -u2 -r -- 'GitHub CLI is missing. Install it with: brew install gh'
+  return 127
+fi
+
+command gh auth login --hostname github.com --git-protocol https --web || return $?
+command gh auth setup-git --hostname github.com

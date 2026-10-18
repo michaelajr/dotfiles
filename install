@@ -1,0 +1,48 @@
+#!/bin/zsh
+# Link the tracked shell configuration into $HOME.
+emulate -LR zsh
+setopt errexit nounset pipefail
+
+readonly repo=${0:A:h}
+readonly destination=${HOME:?HOME must be set}
+readonly backup_root="$destination/.local/state/dotfiles/backups/$(date -u +%Y%m%dT%H%M%SZ)-$$"
+readonly -a files=(zprofile zshrc p10k.zsh zfunctions gitconfig)
+integer dry_run=0
+
+case ${1:-} in
+  --dry-run) dry_run=1 ;;
+  --help|-h)
+    print -r -- 'Usage: ./install [--dry-run]'
+    print -r -- 'Links shell configuration, zfunctions, and gitconfig into $HOME with leading dots.'
+    print -r -- 'Existing files or different symlinks are moved to ~/.local/state/dotfiles/backups/.'
+    exit 0 ;;
+  '') ;;
+  *) print -u2 -r -- "Unknown argument: $1"; exit 2 ;;
+esac
+(( $# <= 1 )) || { print -u2 -r -- 'Too many arguments'; exit 2; }
+
+# Validate everything before changing any targets.
+for name in $files; do
+  [[ -f "$repo/$name" || -d "$repo/$name" ]] || { print -u2 -r -- "Missing source: $repo/$name"; exit 1; }
+done
+[[ -d "$destination" ]] || { print -u2 -r -- "Missing home directory: $destination"; exit 1; }
+
+for name in $files; do
+  source_file="$repo/$name"
+  target="$destination/.$name"
+  if [[ -L "$target" && "${target:A}" == "$source_file" ]]; then
+    print -r -- "Already linked: $target"
+    continue
+  fi
+  if [[ -e "$target" || -L "$target" ]]; then
+    print -r -- "Back up: $target -> $backup_root/.$name"
+    if (( ! dry_run )); then
+      mkdir -p -- "$backup_root"
+      mv -- "$target" "$backup_root/.$name"
+    fi
+  fi
+  print -r -- "Link: $target -> $source_file"
+  if (( ! dry_run )); then
+    ln -s -- "$source_file" "$target"
+  fi
+done
