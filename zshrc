@@ -15,10 +15,10 @@ if [[ -d "$HOME/.zfunctions" ]]; then
   typeset -gU fpath
   fpath=("$HOME/.zfunctions" $fpath)
   () {
-    local function_file
-    for function_file in "$HOME"/.zfunctions/*(N-.); do
-      autoload -Uz -- "${function_file:t}"
-    done
+    local -a function_names=("${fpath[1]}"/*(N-.:t))
+    if (( ${#function_names} )); then
+      autoload -Uz -- "${function_names[@]}"
+    fi
   }
 fi
 

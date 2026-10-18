@@ -116,7 +116,18 @@ hello
 hello Michael
 ```
 
-Functions are registered at startup and their bodies are loaded on first use. To register a new command immediately in the current shell:
+At startup, `zshrc` puts `~/.zfunctions` first in `fpath`, zsh’s function search path. It collects the function names from `fpath[1]` and registers them together with one `autoload -Uz` call:
+
+```zsh
+local -a function_names=("${fpath[1]}"/*(N-.:t))
+if (( ${#function_names} )); then
+  autoload -Uz -- "${function_names[@]}"
+fi
+```
+
+This snippet runs inside an anonymous function so the temporary array stays local. `N` allows an empty directory, `-.` selects regular files while following symlinks, and `:t` keeps only filenames. The count check avoids invoking `autoload` without arguments when the directory is empty. `fpath` supplies search locations; `autoload` registers the command names. Function bodies are loaded on first use.
+
+To register a new command immediately in the current shell:
 
 ```zsh
 autoload -Uz hello
@@ -150,7 +161,14 @@ Complete the browser/device-code flow when prompted. If login fails, the functio
 
 Git uses the GitHub CLI credential helper for `https://github.com` and `https://gist.github.com`. The empty helper entry in each section resets inherited helpers for that host before selecting `gh`. Other Git hosts retain their existing credential configuration. The configured helper path assumes Homebrew’s `gh` at `/opt/homebrew/bin/gh`.
 
-Use HTTPS remote URLs, such as `https://github.com/michaelajr/dotfiles.git`, to use this authentication setup. SSH remotes authenticate with SSH keys instead. Git author name and email are separate from authentication; this repository’s tracked `gitconfig` does not set them.
+Use HTTPS remote URLs, such as `https://github.com/michaelajr/dotfiles.git`, to use this authentication setup. SSH remotes authenticate with SSH keys instead. Git author name and email are separate from authentication. The tracked `gitconfig` includes `~/.gitconfig.local` for machine-local identity and preferences; that file is not installed or tracked by this repository. Git treats its included settings as global configuration. On a new machine, set your identity with:
+
+```zsh
+git config --file ~/.gitconfig.local user.name "Your Name"
+git config --file ~/.gitconfig.local user.email "you@example.com"
+```
+
+Your author name and email still appear in the metadata of commits you publish.
 
 GitHub CLI manages login credentials outside the repository. A raw-file download with a tool such as `curl` does not consult Git’s credential helper; use `gh api` for authenticated GitHub API requests.
 
