@@ -1,61 +1,191 @@
 # Dotfiles
 
-Personal zsh configuration for macOS with Homebrew, Antigen, Oh My Zsh, and Powerlevel10k.
+Michael Andrews’ personal macOS shell configuration, kept in Git so it can be reviewed, backed up, and installed consistently on another machine.
 
-| Repository file | Installed path | Purpose |
+The repository is the source of truth for the configuration. Files are stored here without a leading dot, and the `install` zsh script symlinks them into the home directory with their expected dot-prefixed names. Editing either path updates the same file.
+
+The current setup uses zsh, Apple Silicon Homebrew, Antigen, Oh My Zsh plugins, Powerlevel10k, and GitHub CLI authentication over HTTPS. iTerm2 is the terminal used with this configuration; its application settings are managed separately.
+
+## What is included
+
+| Repository path | Installed path | Purpose |
 | --- | --- | --- |
-| `zprofile` | `~/.zprofile` | Homebrew and JetBrains Toolbox PATH |
-| `zshrc` | `~/.zshrc` | Antigen plugins, cache directories, and theme loading |
-| `p10k.zsh` | `~/.p10k.zsh` | Prompt preferences, including the alternative Apple icon |
-| `zfunctions/` | `~/.zfunctions` | Autoloadable shell commands/functions |
-| `gitconfig` | `~/.gitconfig` | GitHub CLI credential helpers |
+| `zprofile` | `~/.zprofile` | Initializes Homebrew for login shells and adds JetBrains Toolbox scripts to `PATH`. |
+| `zshrc` | `~/.zshrc` | Configures interactive shells, completion caches, custom functions, plugins, and the prompt. |
+| `p10k.zsh` | `~/.p10k.zsh` | Stores Powerlevel10k appearance and prompt behavior. |
+| `zfunctions/` | `~/.zfunctions` | Contains custom commands implemented as autoloadable zsh functions. |
+| `gitconfig` | `~/.gitconfig` | Makes Git use GitHub CLI credentials for GitHub and Gist HTTPS connections. |
+| `install` | Run from the repository | Creates the symlinks and backs up conflicting files or directories. |
+
+`~/.zfunctions` is a symlink to the entire `zfunctions` directory, so newly added functions are automatically part of the repository’s working tree.
 
 ## Install
 
-Keep this repository at `~/src/dotfiles`, or any permanent location. The installer uses its own location to create absolute symlinks.
+### Prerequisites
 
-```zsh
-cd ~/src/dotfiles
-./install --dry-run
-./install
-```
-
-Run `exec zsh` afterward, or open a new terminal window. Re-running the installer leaves correct links alone. Existing files, directories, and different or broken symlinks are preserved under `~/.local/state/dotfiles/backups/<timestamp>-<process-id>/` before replacement. Moving this repository requires running the installer again from its new location.
-
-Edit the repository files or their home-directory symlinks; both refer to the same files. If an application replaces a symlink with a regular file, compare it with the repository copy before running the installer again. Conflicting copies will be backed up, not merged.
-
-## Dependencies
-
-The shell configuration expects Apple Silicon Homebrew at `/opt/homebrew`:
+The configuration currently assumes macOS with Homebrew installed at `/opt/homebrew`. Install the shell tools with:
 
 ```zsh
 brew install antigen kubectl awscli gh
 ```
 
-Antigen downloads the configured plugins and Powerlevel10k on first use. The theme can be customized with `p10k configure`.
+Git must also be available to clone the repository. On another machine, review `zprofile` before installing: its JetBrains Toolbox path currently includes `/Users/Michael` and may need adjustment.
 
-Terminal fonts and iTerm2 preferences are managed separately. Select your preferred Nerd Font in iTerm2. Credentials, private keys, history, caches, compiled zsh files, and app runtime data are intentionally excluded. The generated `.zshrc.zwc` file remains outside this repository.
+### Clone and link
 
-This is a local Git repository; no remote is configured automatically. Review changes with `git diff` before committing or sharing.
+```zsh
+mkdir -p ~/src
+git clone https://github.com/michaelajr/dotfiles.git ~/src/dotfiles
+cd ~/src/dotfiles
+./install --dry-run
+./install
+exec zsh
+```
 
-## Custom shell commands
+If the repository is already cloned, start with `cd ~/src/dotfiles`.
 
-Create one file per function in `~/.zfunctions`, without an extension. The filename is the command name; the file contains the function body, without an outer function definition. No executable bit is needed. Start a new shell to register new commands; existing commands are loaded on first use. To reload an edited function in the current shell, run `unfunction NAME; autoload -Uz NAME`.
+The installer creates symlinks only. It does not install Homebrew packages, fonts, or iTerm2 preferences, and it does not log in to GitHub. Antigen downloads the configured plugins and Powerlevel10k when the shell first loads them, so first startup requires an internet connection.
 
-For example, a file named `~/.zfunctions/hello` can contain:
+The repository can live in another permanent location. The installer derives its source directory from its own path and creates absolute symlinks. If you move the repository, run `./install` again from its new location.
+
+### Installer behavior and backups
+
+- `./install --dry-run` prints the planned changes without modifying files.
+- `./install` leaves existing correct symlinks alone, so it can be run repeatedly.
+- Conflicting files, directories, and different or broken symlinks are moved aside before replacement.
+- Backups are kept outside the repository under `~/.local/state/dotfiles/backups/<timestamp>-<process-id>/`, retaining their original dot-prefixed names.
+- `./install --help` displays usage information.
+
+Backups are not merged into the repository automatically. To restore one, inspect it first, remove the corresponding installed symlink, and move the backup to its original home-directory location.
+
+## Shell setup
+
+For a login shell, `zprofile` sets up Homebrew and the Toolbox scripts path. Interactive shells then load `zshrc`, which:
+
+1. Loads the Powerlevel10k instant-prompt cache when available.
+2. Creates the completion-cache directories needed by Antigen and the kubectl plugin.
+3. Adds `~/.zfunctions` to zsh’s function search path and registers its functions for autoloading.
+4. Loads Oh My Zsh libraries and plugins through Antigen.
+5. Loads the Powerlevel10k theme and the preferences in `~/.p10k.zsh`.
+
+The configured plugins are:
+
+| Plugin | Purpose |
+| --- | --- |
+| `git` | Git aliases and shell helpers. |
+| `command-not-found` | Integrates available command-not-found handlers. |
+| `kubectl` | Kubernetes aliases and completion support. |
+| `aws` | AWS CLI helpers and completion support. |
+| `zsh-autosuggestions` | Suggests commands while typing. |
+| `zsh-syntax-highlighting` | Highlights shell command syntax. |
+
+Antigen’s downloaded bundles and generated completion files live under `~/.cache`, outside this repository.
+
+## Prompt and fonts
+
+Powerlevel10k preferences are tracked in `p10k.zsh`. To run its interactive configuration wizard:
+
+```zsh
+p10k configure
+```
+
+To apply manual edits to the prompt preferences in the current shell:
+
+```zsh
+source ~/.p10k.zsh
+```
+
+The current configuration uses the alternative Apple glyph `U+F302`, which was chosen for its appearance alongside the Home icon with RobotoMono Nerd Font. Icon appearance depends on the selected font and terminal settings.
+
+Choose the terminal font in **iTerm2 → Settings → Profiles → Text**. Font files and iTerm2 preferences are not installed by this repository. After running a configuration wizard or another tool that rewrites a dotfile, check `git diff` and confirm that its home-directory symlink is still intact.
+
+## Custom commands in ~/.zfunctions
+
+Create one file per command, using the command name as its filename, without a `.zsh` extension. The file contains the function body; an outer function declaration and executable permissions are unnecessary.
+
+For example, create `~/.zfunctions/hello` containing:
 
 ```zsh
 print -r -- "Hello, ${1:-world}!"
 ```
 
+Open a new shell, then run:
+
+```zsh
+hello
+hello Michael
+```
+
+Functions are registered at startup and their bodies are loaded on first use. To register a new command immediately in the current shell:
+
+```zsh
+autoload -Uz hello
+```
+
+To reload a function whose body has already been loaded:
+
+```zsh
+unfunction hello
+autoload -Uz hello
+```
+
+Use this directory for function files only: every regular file in it is registered as a command. Add documentation to the repository README instead of placing it in `zfunctions`.
+
 ## GitHub authentication
 
-In a new shell, run:
+Run the included command from an interactive shell:
 
 ```zsh
 github-auth
 ```
 
-This uses `gh auth login --hostname github.com --git-protocol https --web`, then `gh auth setup-git --hostname github.com`. Complete the browser/device-code flow when prompted. The function stops if login fails.
+It runs these commands in order:
 
-GitHub and GitHub Gist HTTPS operations use the GitHub CLI credential helper. SSH remotes still use SSH authentication; use an HTTPS remote URL to use this helper. Authentication credentials are managed by GitHub CLI and are not stored in this repository. Git author name/email are separate settings.
+```zsh
+gh auth login --hostname github.com --git-protocol https --web
+gh auth setup-git --hostname github.com
+```
+
+Complete the browser/device-code flow when prompted. If login fails, the function stops before running Git setup.
+
+Git uses the GitHub CLI credential helper for `https://github.com` and `https://gist.github.com`. The empty helper entry in each section resets inherited helpers for that host before selecting `gh`. Other Git hosts retain their existing credential configuration. The configured helper path assumes Homebrew’s `gh` at `/opt/homebrew/bin/gh`.
+
+Use HTTPS remote URLs, such as `https://github.com/michaelajr/dotfiles.git`, to use this authentication setup. SSH remotes authenticate with SSH keys instead. Git author name and email are separate from authentication; this repository’s tracked `gitconfig` does not set them.
+
+GitHub CLI manages login credentials outside the repository. A raw-file download with a tool such as `curl` does not consult Git’s credential helper; use `gh api` for authenticated GitHub API requests.
+
+To check the current login:
+
+```zsh
+gh auth status --hostname github.com
+```
+
+## Maintaining the repository
+
+Changes made through the installed symlinks are already changes in this repository:
+
+```zsh
+cd ~/src/dotfiles
+git status
+git diff
+git add <files>
+git commit -m "Describe the configuration change"
+git push
+```
+
+To obtain updates from GitHub when the working tree is clean:
+
+```zsh
+cd ~/src/dotfiles
+git pull --ff-only
+./install
+exec zsh
+```
+
+If a tool replaces a home-directory symlink with a regular file, compare that file with the repository version before reinstalling. The installer preserves the conflicting copy in its backup directory but does not merge its changes.
+
+## What stays outside Git
+
+This repository tracks configuration and function source. Credentials, private keys, GitHub CLI authentication data, shell history, session state, caches, compiled `.zwc` files, fonts, and application runtime data stay outside it. The `.gitignore` also excludes common generated files and editor artifacts.
+
+Review additions before committing: this is a public repository, and the ignore rules do not detect secrets inside configuration files.
