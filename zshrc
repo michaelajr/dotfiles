@@ -35,3 +35,5 @@ antigen apply
 
 # Load your Powerlevel10k preferences after running p10k configure.
 [[ ! -f "$HOME/.p10k.zsh" ]] || source "$HOME/.p10k.zsh"
+
+export PATH="$HOME/.local/bin:$PATH"

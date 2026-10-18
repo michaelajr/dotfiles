@@ -67,6 +67,7 @@ For a login shell, `zprofile` sets up Homebrew and the Toolbox scripts path. Int
 3. Adds `~/.zfunctions` to zsh’s function search path and registers its functions for autoloading.
 4. Loads Oh My Zsh libraries and plugins through Antigen.
 5. Loads the Powerlevel10k theme and the preferences in `~/.p10k.zsh`.
+6. Prepends `~/.local/bin` to `PATH` so user-installed commands are available and take precedence over commands in later entries.
 
 The configured plugins are:
 
@@ -204,6 +205,6 @@ If a tool replaces a home-directory symlink with a regular file, compare that fi
 
 ## What stays outside Git
 
-This repository tracks configuration and function source. Credentials, private keys, GitHub CLI authentication data, shell history, session state, caches, compiled `.zwc` files, fonts, and application runtime data stay outside it. The `.gitignore` also excludes common generated files and editor artifacts.
+This repository tracks configuration, function source, and shared JetBrains project metadata in `.idea/`. Credentials, private keys, GitHub CLI authentication data, shell history, session state, caches, compiled `.zwc` files, fonts, and application runtime data stay outside it. The `.gitignore` files also exclude common generated files and local editor state.
 
 Review additions before committing: this is a public repository, and the ignore rules do not detect secrets inside configuration files.
