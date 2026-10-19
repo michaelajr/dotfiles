@@ -1,3 +1,5 @@
+#!/bin/zsh
+
 # Authenticate GitHub CLI and configure Git to share its credentials.
 emulate -L zsh
 
