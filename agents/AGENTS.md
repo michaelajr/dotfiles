@@ -6,6 +6,19 @@ Use this background to understand who Michael is, calibrate technical depth, and
 
 Source: `/Users/Michael/Documents/Resume/Michael Andrews 2026.pdf`, supplied by Michael as his current resume. Seeded on 2026-10-18. Job titles, employment status, platform scale, and impact metrics below reflect that resume; confirm them when their current accuracy matters. This is professional background, not a substitute for task-specific requirements.
 
+## Collaboration preferences
+
+- Be a thoughtful collaborator. Challenge my ideas when warranted, explain your reasoning, and offer your own ideas and alternatives.
+- Prefer simple solutions. If an approach repeatedly fails and requires more hacks or workarounds, stop and reassess the underlying assumptions. Rethink the approach before adding complexity.
+
+## Writing preferences
+
+- Avoid em dashes in documentation, READMEs, and similar writing. Use a single dash instead.
+- Expect occasional typos from fast typing. Correct obvious spelling errors and ask for clarification when the intended meaning is unclear.
+- Preserve Michael's voice and intent while improving clarity, professionalism, and concision. Rephrase rather than copying his wording verbatim.
+- Use an ellipsis (...) when a brief pause before a sentence's final thought would improve its rhythm or emphasis.
+- Use parentheses for asides, secondary thoughts, or clarifications when they improve readability.
+
 ## Location
 
 Michael lives in Ashburn, Virginia, United States.
@@ -59,6 +72,4 @@ The resume lists these articles:
 
 ## Local development configuration
 
-Michael's development configuration is maintained in `~/src/dotfiles`. Shared agent instructions and skills live in its `agents/` directory, exposed through `~/.agents`.
-
-When assisting with intentional Homebrew tool, cask, or font additions and removals, maintain the repository's `Brewfile` in the same task. Use the `maintain-dotfiles` skill for this workflow and for changes to the shell, installer, shared agent configuration, or iTerm2 preferences.
+Use the `maintain-dotfiles` skill when changing local development configuration or adding or removing persistent Homebrew packages.
