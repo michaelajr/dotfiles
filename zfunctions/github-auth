@@ -7,6 +7,7 @@ if (( $# )); then
   print -u2 -r -- 'Usage: github-auth'
   return 2
 fi
+# shellcheck disable=SC2154
 if (( ! $+commands[gh] )); then
   print -u2 -r -- 'GitHub CLI is missing. Install it with: brew install gh'
   return 127

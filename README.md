@@ -143,21 +143,6 @@ autoload -Uz hello
 
 Use this directory for function files only: every regular file in it is registered as a command. Add documentation to the repository README instead of placing it in `zfunctions`.
 
-## Codex cursor in JetBrains terminals
-
-`zfunctions/codex` wraps the Codex executable in JetBrains terminals when both input and output are connected to a terminal. It sends `printf '\033[2 q'` after a one-second delay to select a steady block after Codex initializes its interface. It restores the steady block when Codex exits and cancels the delayed change if the command exits early.
-
-Codex keeps its normal terminal connection, so resizing, arguments, exit status, and exit messages pass through. Other terminals and redirected input or output use the executable directly. Run `command codex` to bypass the wrapper.
-
-The delay is a practical workaround, not a signal that Codex is ready. A startup that takes longer than one second, or a later cursor-style change from Codex, can bring blinking back.
-
-New shells load the wrapper automatically. To load or reload it in an existing shell:
-
-```zsh
-unfunction codex 2>/dev/null
-autoload -Uz codex
-```
-
 ## GitHub authentication
 
 Run the included command from an interactive shell:
