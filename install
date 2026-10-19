@@ -1,48 +1,86 @@
 #!/bin/zsh
-# Link the tracked shell configuration into $HOME.
+# Link tracked configuration and select iTerm2's custom settings folder.
 emulate -LR zsh
 setopt errexit nounset pipefail
 
 readonly repo=${0:A:h}
 readonly destination=${HOME:?HOME must be set}
 readonly backup_root="$destination/.local/state/dotfiles/backups/$(date -u +%Y%m%dT%H%M%SZ)-$$"
-readonly -a files=(zprofile zshrc p10k.zsh zfunctions gitconfig)
+readonly -a sources=(zprofile zshrc p10k.zsh zfunctions gitconfig agents agents/AGENTS.md)
+readonly -a targets=(.zprofile .zshrc .p10k.zsh .zfunctions .gitconfig .agents .codex/AGENTS.md)
 integer dry_run=0
 
 case ${1:-} in
   --dry-run) dry_run=1 ;;
   --help|-h)
     print -r -- 'Usage: ./install [--dry-run]'
-    print -r -- 'Links shell configuration, zfunctions, and gitconfig into $HOME with leading dots.'
-    print -r -- 'Existing files or different symlinks are moved to ~/.local/state/dotfiles/backups/.'
+    print -r -- 'Links shell, Git, and shared agent configuration; configures iTerm2 settings.'
+    print -r -- 'Existing conflicting files and preferences are backed up under ~/.local/state/dotfiles/backups/.'
     exit 0 ;;
   '') ;;
   *) print -u2 -r -- "Unknown argument: $1"; exit 2 ;;
 esac
 (( $# <= 1 )) || { print -u2 -r -- 'Too many arguments'; exit 2; }
 
-# Validate everything before changing any targets.
-for name in $files; do
+# Validate sources, parent directories, and platform before making changes.
+[[ -d "$destination" ]] || { print -u2 -r -- "Missing home directory: $destination"; exit 1; }
+[[ $OSTYPE == darwin* ]] || { print -u2 -r -- 'This installer currently supports macOS.'; exit 1; }
+(( $+commands[defaults] )) || { print -u2 -r -- 'The macOS defaults command is required.'; exit 1; }
+for name in $sources; do
   [[ -f "$repo/$name" || -d "$repo/$name" ]] || { print -u2 -r -- "Missing source: $repo/$name"; exit 1; }
 done
-[[ -d "$destination" ]] || { print -u2 -r -- "Missing home directory: $destination"; exit 1; }
+[[ -f "$repo/iterm2/com.googlecode.iterm2.plist" ]] || { print -u2 -r -- 'Missing iTerm2 settings file'; exit 1; }
+for name in $targets; do
+  target="$destination/$name"
+  parent=${target:h}
+  while [[ ! -e $parent && ! -L $parent ]]; do parent=${parent:h}; done
+  [[ -d $parent ]] || { print -u2 -r -- "Parent is not a directory: $parent"; exit 1; }
+done
 
-for name in $files; do
-  source_file="$repo/$name"
-  target="$destination/.$name"
-  if [[ -L "$target" && "${target:A}" == "$source_file" ]]; then
+for (( index = 1; index <= ${#sources}; index++ )); do
+  source_file="$repo/${sources[index]}"
+  target="$destination/${targets[index]}"
+  # Codex uses the same shared instructions through its expected global path.
+  link_source=$source_file
+  [[ ${targets[index]} != .codex/AGENTS.md ]] || link_source="$destination/.agents/AGENTS.md"
+  if [[ -L "$target" && "${target:A}" == "${source_file:A}" ]]; then
     print -r -- "Already linked: $target"
     continue
   fi
   if [[ -e "$target" || -L "$target" ]]; then
-    print -r -- "Back up: $target -> $backup_root/.$name"
+    backup="$backup_root/${targets[index]}"
+    print -r -- "Back up: $target -> $backup"
     if (( ! dry_run )); then
-      mkdir -p -- "$backup_root"
-      mv -- "$target" "$backup_root/.$name"
+      mkdir -p -- "${backup:h}"
+      mv -- "$target" "$backup"
     fi
   fi
-  print -r -- "Link: $target -> $source_file"
+  print -r -- "Link: $target -> $link_source"
   if (( ! dry_run )); then
-    ln -s -- "$source_file" "$target"
+    mkdir -p -- "${target:h}"
+    ln -s -- "$link_source" "$target"
   fi
 done
+
+# iTerm2 supports a custom folder; its live preference plist should not be symlinked.
+readonly iterm_domain=com.googlecode.iterm2
+if [[ "$(command defaults read $iterm_domain PrefsCustomFolder 2>/dev/null || true)" == "$repo/iterm2" &&
+      "$(command defaults read $iterm_domain LoadPrefsFromCustomFolder 2>/dev/null || true)" == 1 &&
+      "$(command defaults read $iterm_domain NoSyncNeverRemindPrefsChangesLostForFile 2>/dev/null || true)" == 1 &&
+      "$(command defaults read $iterm_domain NoSyncNeverRemindPrefsChangesLostForFile_selection 2>/dev/null || true)" == 0 ]]; then
+  print -r -- 'iTerm2 custom settings folder is already configured.'
+else
+  print -r -- "Configure iTerm2: load from $repo/iterm2 and save changes on quit."
+  if (( ! dry_run )); then
+    if command defaults read $iterm_domain >/dev/null 2>&1; then
+      mkdir -p -- "$backup_root"
+      command defaults export $iterm_domain "$backup_root/iterm2-preferences.plist"
+      print -r -- "Backed up iTerm2 preferences: $backup_root/iterm2-preferences.plist"
+    fi
+    command defaults write $iterm_domain PrefsCustomFolder -string "$repo/iterm2"
+    command defaults write $iterm_domain LoadPrefsFromCustomFolder -bool true
+    command defaults write $iterm_domain NoSyncNeverRemindPrefsChangesLostForFile -bool true
+    command defaults write $iterm_domain NoSyncNeverRemindPrefsChangesLostForFile_selection -int 0
+    print -r -- 'Quit and reopen iTerm2 to activate the custom settings folder.'
+  fi
+fi
