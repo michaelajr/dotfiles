@@ -220,6 +220,8 @@ Review the diff before keeping a regenerated manifest, especially on another mac
 
 The installer configures iTerm2’s native **General → Settings → Load settings from a custom folder or URL** feature to use this repository’s `iterm2/` directory and save settings changes there on quit. The live plist in `~/Library/Preferences` is not symlinked. Restart iTerm2 once after installation; changes made through its Settings window are saved to the tracked file when iTerm2 quits. Review the resulting Git diff before committing.
 
+iTerm2 can also rewrite numeric formatting and remove inherited macOS preference keys when saving. These changes can produce a large diff without changing profile settings, so compare preference values when reviewing an export.
+
 If the repository moves, rerun `./install` to update the custom-folder path. Other iTerm2 data remains local.
 
 ## Shared agent configuration
@@ -278,5 +280,7 @@ If a tool replaces a home-directory symlink with a regular file, compare that fi
 ## What stays outside Git
 
 This repository tracks configuration, function source, and shared JetBrains project metadata in `.idea/`. Credentials, private keys, GitHub CLI authentication data, shell history, session state, caches, compiled `.zwc` files, fonts, and application runtime data stay outside it. The `.gitignore` files also exclude common generated files and local editor state.
+
+Generated GoLand import defaults (`.idea/go.imports.xml`) are ignored as well.
 
 Review additions before committing: this is a public repository, and the ignore rules do not detect secrets inside configuration files.
